@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil – RDV Medical{% endblock %}
+
+{% block content %}
+  <div class="p-5 bg-light text-center rounded">
+    <h1 class="display-5">Bienvenue sur RDV Medical</h1>
+    <p class="lead">Gérez vos rendez‑vous en quelques clics.</p>
+
+    {% if user.is_authenticated %}
+      <p>Salut <strong>{{ user.username }}</strong> !</p>
+      {% if user.role == 'PAT' %}
+        <a class="btn btn-primary me-2" href="{% url 'dashboard_patient' %}">Mon dashboard patient</a>
+      {% elif user.role == 'DOC' %}
+        <a class="btn btn-primary me-2" href="{% url 'dashboard_medecin' %}">Mon dashboard médecin</a>
+      {% endif %}
+    {% else %}
+      <a class="btn btn-primary me-2" href="{% url 'login' %}">Se connecter</a>
+      <a class="btn btn-outline-primary me-2" href="{% url 'signup_patient' %}">S’inscrire (patient)</a>
+      <a class="btn btn-outline-primary" href="{% url 'signup_medecin' %}">S’inscrire (médecin)</a>
+    {% endif %}
+  </div>
+{% endblock %}

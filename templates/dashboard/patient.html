@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Patient – RDV Medical{% endblock %}
+
+{% block content %}
+  <h2>Mon Dashboard Patient</h2>
+  <div class="row">
+    <!-- 1. Formulaire de prise de RDV -->
+    <div class="col-md-6">
+      <h3>Prendre un nouveau rendez‑vous</h3>
+      <form id="new-appointment-form">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="appointment_date" class="form-label">Date</label>
+          <input type="date" id="appointment_date" name="date" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label for="doctor" class="form-label">Médecin</label>
+          <select id="doctor" name="doctor" class="form-control" required>
+            <option value="" disabled selected>-- Sélectionnez --</option>
+            {% for med in doctors %}
+              <option value="{{ med.id }}">Dr. {{ med.username }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="appointment_time" class="form-label">Heure</label>
+          <select id="appointment_time" name="scheduled_time" class="form-control" required>
+            <option value="">-- Choisir --</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Prendre RDV</button>
+      </form>
+    </div>
+
+    <!-- 2. Liste des RDV existants -->
+    <div class="col-md-6">
+      <h3>Mes rendez‑vous</h3>
+      <ul class="list-group" id="appointment-list">
+        {% for rdv in appointments %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ rdv.scheduled_time|date:"d/m/Y H:i" }} – Dr. {{ rdv.doctor.username }}</span>
+            <div>
+              <button type="button"
+                      class="btn btn-sm btn-warning btn-reschedule me-2"
+                      data-id="{{ rdv.id }}"
+                      data-date="{{ rdv.scheduled_time|date:'Y-m-d' }}"
+                      data-doctor="{{ rdv.doctor.id }}">
+                Modifier
+              </button>
+              <button class="btn btn-sm btn-danger"
+                      onclick="deleteAppointment({{ rdv.id }})">
+                Annuler
+              </button>
+            </div>
+          </li>
+        {% empty %}
+          <li class="list-group-item">Vous n'avez aucun rendez-vous.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    // 0. Récupérer CSRF
+    function getCookie(name) {
+      let cookieValue = null;
+      document.cookie.split(';').forEach(c => {
+        const [k, v] = c.trim().split('=');
+        if (k === name) cookieValue = decodeURIComponent(v);
+      });
+      return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    // 1. Charger les créneaux dispo
+    async function fetchSlots(doctorId, date) {
+      const res = await fetch(
+        `/api/appointments/available-slots/?doctor=${doctorId}&date=${date}`,
+        { credentials: 'include' }
+      );
+      if (!res.ok) return [];
+      return await res.json();
+    }
+
+    async function updateSlots() {
+      const doc = document.getElementById('doctor').value;
+      const date = document.getElementById('appointment_date').value;
+      const timeSelect = document.getElementById('appointment_time');
+      timeSelect.innerHTML = '<option value="">-- Choisir --</option>';
+      if (!doc || !date) return;
+      const slots = await fetchSlots(doc, date);
+      slots.forEach(iso => {
+        const dt = new Date(iso);
+        const opt = document.createElement('option');
+        opt.value = iso;
+        opt.textContent = dt.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+        timeSelect.appendChild(opt);
+      });
+    }
+    document.getElementById('doctor').addEventListener('change', updateSlots);
+    document.getElementById('appointment_date').addEventListener('change', updateSlots);
+
+    // 2. Création d'un RDV via API
+    document.getElementById('new-appointment-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        doctor: form.doctor.value,
+        scheduled_time: form.scheduled_time.value
+      };
+      const res = await fetch('/api/appointments/', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) location.reload();
+      else alert('Erreur : ' + JSON.stringify(await res.json()));
+    });
+
+    // 3. Suppression d'un RDV
+    function deleteAppointment(id) {
+      if (!confirm('Voulez-vous vraiment annuler ce rendez-vous ?')) return;
+      fetch(`/api/appointments/${id}/`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': csrftoken }
+      }).then(r => {
+        if (r.ok) location.reload();
+        else alert('Erreur lors de l\'annulation');
+      });
+    }
+
+    // 4. Rescheduling via formulaire inline avec date+slots
+    document.querySelectorAll('.btn-reschedule').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id       = btn.dataset.id;
+        const dateVal  = btn.dataset.date;
+        const doctorId = btn.dataset.doctor;
+        const li       = btn.closest('li');
+
+        // supprimer l'ancien form si présent
+        const oldForm = li.querySelector('.reschedule-form');
+        if (oldForm) return oldForm.remove();
+
+        // créer le form
+        const form = document.createElement('form');
+        form.className = 'reschedule-form d-flex align-items-center mt-2';
+        form.innerHTML = `
+          <input type="date" name="date" value="${dateVal}"
+                 class="form-control form-control-sm me-2" required>
+          <select name="scheduled_time"
+                  class="form-control form-control-sm me-2 time-select"
+                  required>
+            <option value="">-- Choisir --</option>
+          </select>
+          <button type="submit" class="btn btn-sm btn-success me-2">OK</button>
+          <button type="button" class="btn btn-sm btn-secondary cancel">✕</button>
+        `;
+
+        // handler cancel
+        form.querySelector('.cancel').addEventListener('click', () => form.remove());
+
+        // load initial slots
+        async function load() {
+          const dateInp = form.querySelector('input[name="date"]').value;
+          const select = form.querySelector('.time-select');
+          select.innerHTML = '<option value="">-- Choisir --</option>';
+          const slots = await fetchSlots(doctorId, dateInp);
+          slots.forEach(iso => {
+            const dt = new Date(iso);
+            const op = document.createElement('option');
+            op.value = iso;
+            op.textContent = dt.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+            select.appendChild(op);
+          });
+        }
+        await load();
+        form.querySelector('input[name="date"]').addEventListener('change', load);
+
+        // submit reschedule
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const iso = form.scheduled_time.value;
+          fetch(`/api/appointments/${id}/`, {
+            method: 'PATCH',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrftoken
+            },
+            body: JSON.stringify({ scheduled_time: iso })
+          }).then(r => {
+            if (r.ok) location.reload();
+            else alert('Erreur lors de la modification');
+          });
+        });
+
+        li.appendChild(form);
+      });
+    });
+  </script>
+{% endblock %}

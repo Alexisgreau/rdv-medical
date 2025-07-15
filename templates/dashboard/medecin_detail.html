@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Détail du Rendez‑Vous – RDV Medical{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h2>Détail du rendez‑vous</h2>
+  <p><strong>Date :</strong> {{ appointment.scheduled_time|date:"d/m/Y H:i" }}</p>
+  <p><strong>Patient :</strong> {{ appointment.patient.username }}</p>
+  <p><strong>Statut :</strong> {{ appointment.get_status_display }}</p>
+
+  <div class="mb-3">
+    <button class="btn btn-success me-2" onclick="confirmRdv({{ appointment.id }})">
+      Confirmer
+    </button>
+    <button class="btn btn-danger" onclick="cancelRdv({{ appointment.id }})">
+      Annuler
+    </button>
+  </div>
+
+  <hr/>
+
+  <h3>Note Médicale</h3>
+  <form id="note-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">
+      {% if note %}Modifier la note{% else %}Ajouter la note{% endif %}
+    </button>
+  </form>
+
+  {% if note %}
+    <div class="mt-4 alert alert-secondary">
+      <h4>Note enregistrée</h4>
+      <p>{{ note.content }}</p>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+// Fonction utilitaire pour récupérer le CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  document.cookie.split(';').forEach(c => {
+    const [k, v] = c.trim().split('=');
+    if (k === name) cookieValue = decodeURIComponent(v);
+  });
+  return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+// Confirmer un RDV (méthode POST sur /api/appointments/{id}/confirm/)
+function confirmRdv(id) {
+  fetch(`/api/appointments/${id}/confirm/`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'X-CSRFToken': csrftoken },
+  }).then(r => r.ok
+    ? location.reload()
+    : alert('Erreur lors de la confirmation')
+  );
+}
+
+// Annuler un RDV (PATCH status = 'CANC')
+function cancelRdv(id) {
+  fetch(`/api/appointments/${id}/`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'X-CSRFToken': csrftoken,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status: 'CANC' }),
+  }).then(r => r.ok
+    ? location.reload()
+    : alert('Erreur lors de l\'annulation')
+  );
+}
+
+// Soumettre la note médicale via AJAX
+document.getElementById('note-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+  fetch('', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'X-CSRFToken': csrftoken },
+    body: formData
+  }).then(() => location.reload());
+});
+</script>
+{% endblock %}

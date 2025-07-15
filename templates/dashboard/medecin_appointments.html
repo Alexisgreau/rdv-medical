@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Mes rendez‑vous{% endblock %}
+{% block content %}
+<h2>Mes rendez‑vous</h2>
+<ul class="list-group">
+  {% for rdv in appointments %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      {{ rdv.scheduled_time }} – {{ rdv.patient.username }}
+      <a href="{% url 'medecin_appointment_detail' rdv.pk %}" class="btn btn-sm btn-outline-primary">Voir</a>
+    </li>
+  {% empty %}
+    <li class="list-group-item">Aucun rendez‑vous programmé.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
