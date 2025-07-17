@@ -2,26 +2,23 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User, MedicalNote
 
-class PatientSignupForm(UserCreationForm):
+class SignupForm(UserCreationForm):
+    ROLE_CHOICES = [
+        (User.Roles.PATIENT, "Patient"),
+        (User.Roles.MEDECIN, "Médecin"),
+    ]
+
+    email = forms.EmailField(required=True)
+    phone = forms.CharField(required=True)
+    role = forms.ChoiceField(choices=ROLE_CHOICES, widget=forms.RadioSelect)
+
     class Meta:
         model = User
-        fields = ('username', 'email', 'phone')
+        fields = ("username", "email", "phone", "role")
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.role = User.Roles.PATIENT
-        if commit:
-            user.save()
-        return user
-
-class MedecinSignupForm(UserCreationForm):
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'phone')
-
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.role = User.Roles.MEDECIN
+        user.role = self.cleaned_data["role"]
         if commit:
             user.save()
         return user

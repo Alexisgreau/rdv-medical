@@ -1,28 +1,27 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Appointment, MedicalNote
+from django.contrib.auth import get_user_model
+from .models import Appointment, MedicalNote
+
+User = get_user_model()
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    # On étend les fieldsets existants pour y inclure role & phone
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ('Rôle & contact', {
-            'fields': ('role', 'phone'),
-        }),
-    )
-    # Idem pour le formulaire d'ajout
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        ('Rôle & contact', {
-            'fields': ('role', 'phone'),
-        }),
-    )
-    list_display = ['username', 'email', 'role', 'is_staff', 'is_superuser']
+class UserAdmin(admin.ModelAdmin):
+    list_display  = ('username', 'email', 'role', 'is_active', 'is_staff')
+    list_filter   = ('role', 'is_active', 'is_staff')
+    search_fields = ('username', 'email')
 
-# On enregistre aussi les autres modèles
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ['patient', 'doctor', 'scheduled_time', 'status']
+    list_display  = ('id', 'patient', 'doctor', 'scheduled_time', 'status')
+    list_filter   = ('status', 'doctor')
+    search_fields = ('patient__username', 'doctor__username')
+    ordering      = ('-scheduled_time',)
 
 @admin.register(MedicalNote)
 class MedicalNoteAdmin(admin.ModelAdmin):
-    list_display = ['appointment', 'created_at']
+    list_display  = ('appointment', 'snippet')
+    search_fields = ('appointment__patient__username',)
+    
+    def snippet(self, obj):
+        return obj.content[:50] + ('…' if len(obj.content) > 50 else '')
+    snippet.short_description = 'Contenu (aperçu)'

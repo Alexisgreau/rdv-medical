@@ -1,7 +1,7 @@
 from django.urls import reverse_lazy
 from django.views.generic.list import ListView
 from django.views import generic
-from .forms import PatientSignupForm, MedecinSignupForm
+from .forms import SignupForm
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 from django.views.generic.detail import DetailView
@@ -24,13 +24,8 @@ from rest_framework.response import Response
 import datetime
 
 
-class PatientSignUpView(generic.CreateView):
-    form_class = PatientSignupForm
-    template_name = 'registration/signup_form.html'
-    success_url = reverse_lazy('login')
-
-class MedecinSignUpView(generic.CreateView):
-    form_class = MedecinSignupForm
+class SignUpView(generic.CreateView):
+    form_class = SignupForm
     template_name = 'registration/signup_form.html'
     success_url = reverse_lazy('login')
 

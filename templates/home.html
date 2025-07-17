@@ -16,8 +16,7 @@
       {% endif %}
     {% else %}
       <a class="btn btn-primary me-2" href="{% url 'login' %}">Se connecter</a>
-      <a class="btn btn-outline-primary me-2" href="{% url 'signup_patient' %}">S’inscrire (patient)</a>
-      <a class="btn btn-outline-primary" href="{% url 'signup_medecin' %}">S’inscrire (médecin)</a>
+      <a class="btn btn-outline-primary me-2" href="{% url 'signup' %}">S’inscrire</a>
     {% endif %}
   </div>
 {% endblock %}

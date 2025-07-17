@@ -8,7 +8,7 @@ from .views import AppointmentViewSet
 
 # **Importer explicitement** ton module views
 from app.views import (
-    PatientSignUpView, MedecinSignUpView,
+    SignUpView,
     PatientDashboardView, UserProfileUpdateView,
     HomePageView, 
     DoctorAppointmentListView, DoctorAppointmentDetailView
@@ -22,8 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/login/',  auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
-    path('accounts/signup/patient/', PatientSignUpView.as_view(),   name='signup_patient'),
-    path('accounts/signup/medecin/', MedecinSignUpView.as_view(),   name='signup_medecin'),
+    path('accounts/signup/', SignUpView.as_view(),   name='signup'),
     path('dashboard/patient/',     PatientDashboardView.as_view(), name='dashboard_patient'),
     path("medecin/rdvs/",      DoctorAppointmentListView.as_view(),   name="medecin_rdvs"),
     path("medecin/rdvs/<int:pk>/", DoctorAppointmentDetailView.as_view(), name="medecin_appointment_detail"),
