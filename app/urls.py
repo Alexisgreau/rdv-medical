@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import AppointmentViewSet
+from .views import AppointmentViewSet, DoctorAppointmentListView
+import datetime
 
 # **Importer explicitement** ton module views
 from app.views import (
@@ -27,4 +28,5 @@ urlpatterns = [
     path('dashboard/medecin/', DoctorAppointmentListView.as_view(), name='dashboard_medecin'),
     path('api/', include(router.urls)),
     path('profile/', UserProfileUpdateView.as_view(), name='profile'),
+    path('medecin/agenda/', DoctorAppointmentListView.as_view(), name='dashboard_medecin'),
 ]

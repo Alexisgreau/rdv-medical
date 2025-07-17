@@ -1,18 +1,113 @@
 {% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
 
 {% block title %}Inscription – RDV Medical{% endblock %}
 
 {% block content %}
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <h2>Inscription</h2>
-      <form method="post" novalidate>{% csrf_token %}
-        {{ form.as_p }}
-        <button class="btn btn-success" type="submit">S’inscrire</button>
-      </form>
-      <p class="mt-3">
-        Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a>
-      </p>
+<!-- On ajoute un léger gradient plutôt qu’un gris uni -->
+<section class="vh-100 d-flex align-items-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <!-- Colonne centrale pour le form -->
+      <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+
+            <!-- Logo & Titre -->
+            <div class="text-center mb-4">
+              <img src="{% static 'images/logo.svg' %}" alt="RDV Medical" width="50">
+              <h4 class="mt-2">Créez votre compte</h4>
+              <p class="text-muted">Gérez vos rendez‑vous en toute simplicité</p>
+            </div>
+
+            <!-- Erreurs globales -->
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+
+            <form method="post" novalidate>
+              {% csrf_token %}
+
+              <!-- Choix du rôle -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Vous êtes</label>
+                <div class="btn-group w-100" role="group">
+                  {% for val,label in form.role.field.choices %}
+                    <input
+                      type="radio"
+                      class="btn-check"
+                      name="{{ form.role.name }}"
+                      id="role_{{ forloop.counter }}"
+                      value="{{ val }}"
+                      {% if form.role.value == val %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="role_{{ forloop.counter }}">
+                      {{ label }}
+                    </label>
+                  {% endfor %}
+                </div>
+                {% for err in form.role.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <!-- Floating labels -->
+              <div class="form-floating mb-3">
+                {{ form.username|add_class:"form-control" }}
+                <label for="{{ form.username.id_for_label }}">Nom d’utilisateur</label>
+                {% for err in form.username.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-floating mb-3">
+                {{ form.email|add_class:"form-control" }}
+                <label for="{{ form.email.id_for_label }}">Adresse e‑mail</label>
+                {% for err in form.email.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <!-- Input group téléphone sans icône pour alléger -->
+              <div class="form-floating mb-3">
+                {{ form.phone|add_class:"form-control" }}
+                <label for="{{ form.phone.id_for_label }}">Téléphone</label>
+                {% for err in form.phone.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-floating mb-3">
+                {{ form.password1|add_class:"form-control" }}
+                <label for="{{ form.password1.id_for_label }}">Mot de passe</label>
+                {% for err in form.password1.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-floating mb-4">
+                {{ form.password2|add_class:"form-control" }}
+                <label for="{{ form.password2.id_for_label }}">Confirmez le mot de passe</label>
+                {% for err in form.password2.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill">
+                S’inscrire
+              </button>
+            </form>
+
+            <p class="mt-3 text-center small text-muted">
+              Déjà un compte ? <a href="{% url 'login' %}">Se connecter</a>
+            </p>
+
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+</section>
 {% endblock %}

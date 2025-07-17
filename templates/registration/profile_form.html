@@ -1,9 +1,50 @@
 {% extends "base.html" %}
-{% block title %}Mon Profil{% endblock %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Mon Profil – RDV Medical{% endblock %}
+
 {% block content %}
-  <h2>Mon Profil</h2>
-  <form method="post">{% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-success" type="submit">Enregistrer</button>
-  </form>
+<section class="vh-100 d-flex align-items-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-4">
+            
+            <h2 class="h4 text-center mb-4">Mon Profil</h2>
+            
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {{ form.non_field_errors }}
+              </div>
+            {% endif %}
+            
+            <form method="post" novalidate>
+              {% csrf_token %}
+              
+              {% for field in form.visible_fields %}
+                <div class="form-floating mb-3">
+                  {{ field|add_class:"form-control" }}
+                  <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                  {% if field.help_text %}
+                    <div class="form-text">{{ field.help_text }}</div>
+                  {% endif %}
+                  {% for error in field.errors %}
+                    <div class="text-danger small">{{ error }}</div>
+                  {% endfor %}
+                </div>
+              {% endfor %}
+              
+              <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill">
+                Enregistrer les modifications
+              </button>
+            </form>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 {% endblock %}

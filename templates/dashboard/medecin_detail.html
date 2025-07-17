@@ -1,67 +1,101 @@
 {% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
 
 {% block title %}Détail du Rendez‑Vous – RDV Medical{% endblock %}
 
 {% block content %}
-<div class="container my-4">
-  <h2>Détail du rendez‑vous</h2>
-  <p><strong>Date :</strong> {{ appointment.scheduled_time|date:"d/m/Y H:i" }}</p>
-  <p><strong>Patient :</strong> {{ appointment.patient.username }}</p>
-  <p><strong>Statut :</strong> {{ appointment.get_status_display }}</p>
+<section class="py-5" style="background: linear-gradient(135deg, #f0f2f5 0%, #ffffff 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-8">
 
-  <div class="mb-3">
-    <button class="btn btn-success me-2" onclick="confirmRdv({{ appointment.id }})">
-      Confirmer
-    </button>
-    <button class="btn btn-danger" onclick="cancelRdv({{ appointment.id }})">
-      Annuler
-    </button>
-  </div>
+        <!-- En‑tête RDV -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+              <h3 class="h5 mb-1">Rendez‑vous du {{ appointment.scheduled_time|date:"d/m/Y H:i" }}</h3>
+              <p class="mb-0 text-muted">
+                Patient : <strong>{{ appointment.patient.get_full_name }}</strong><br>
+                Statut : 
+                <span class="badge 
+                  {% if appointment.status == 'PEND' %}bg-warning text-dark
+                  {% elif appointment.status == 'CONF' %}bg-success
+                  {% else %}bg-danger{% endif %}">
+                  {{ appointment.get_status_display }}
+                </span>
+              </p>
+            </div>
+            <div class="btn-group">
+              <button class="btn btn-success" onclick="confirmRdv({{ appointment.id }})">
+                <i class="bi bi-check-circle me-1"></i> Confirmer
+              </button>
+              <button class="btn btn-danger" onclick="cancelRdv({{ appointment.id }})">
+                <i class="bi bi-x-circle me-1"></i> Annuler
+              </button>
+            </div>
+          </div>
+        </div>
 
-  <hr/>
+        <!-- Note Médicale -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h4 class="h6 mb-3">Note médicale</h4>
 
-  <h3>Note Médicale</h3>
-  <form id="note-form">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">
-      {% if note %}Modifier la note{% else %}Ajouter la note{% endif %}
-    </button>
-  </form>
+            <form id="note-form" novalidate>
+              {% csrf_token %}
+              {{ form.non_field_errors }}
 
-  {% if note %}
-    <div class="mt-4 alert alert-secondary">
-      <h4>Note enregistrée</h4>
-      <p>{{ note.content }}</p>
+              <div class="form-floating mb-3">
+                {{ form.content|add_class:"form-control" }}
+                <label for="{{ form.content.id_for_label }}">Contenu de la note</label>
+                {% for err in form.content.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+
+              <button type="submit" class="btn btn-primary rounded-pill px-4">
+                {% if note %}Modifier la note{% else %}Ajouter la note{% endif %}
+              </button>
+            </form>
+
+            {% if note %}
+              <hr class="my-4">
+              <div class="bg-light p-3 rounded">
+                <h5 class="h6 mb-2">Note enregistrée</h5>
+                <p class="mb-0">{{ note.content }}</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
     </div>
-  {% endif %}
-</div>
+  </div>
+</section>
 
 <script>
-// Fonction utilitaire pour récupérer le CSRF token
+// utilitaire CSRF
 function getCookie(name) {
-  let cookieValue = null;
+  let val = null;
   document.cookie.split(';').forEach(c => {
     const [k, v] = c.trim().split('=');
-    if (k === name) cookieValue = decodeURIComponent(v);
+    if (k === name) val = decodeURIComponent(v);
   });
-  return cookieValue;
+  return val;
 }
 const csrftoken = getCookie('csrftoken');
 
-// Confirmer un RDV (méthode POST sur /api/appointments/{id}/confirm/)
+// Confirmer RDV
 function confirmRdv(id) {
   fetch(`/api/appointments/${id}/confirm/`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'X-CSRFToken': csrftoken },
-  }).then(r => r.ok
-    ? location.reload()
-    : alert('Erreur lors de la confirmation')
-  );
+  }).then(r => r.ok ? location.reload() : alert('Erreur lors de la confirmation'));
 }
 
-// Annuler un RDV (PATCH status = 'CANC')
+// Annuler RDV
 function cancelRdv(id) {
   fetch(`/api/appointments/${id}/`, {
     method: 'PATCH',
@@ -71,22 +105,22 @@ function cancelRdv(id) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ status: 'CANC' }),
-  }).then(r => r.ok
-    ? location.reload()
-    : alert('Erreur lors de l\'annulation')
-  );
+  }).then(r => r.ok ? location.reload() : alert('Erreur lors de l\'annulation'));
 }
 
-// Soumettre la note médicale via AJAX
+// Soumettre note sans recharger le formulaire entier
 document.getElementById('note-form').addEventListener('submit', function(e) {
   e.preventDefault();
-  const formData = new FormData(this);
-  fetch('', {
+  const data = new FormData(this);
+  fetch(window.location.pathname, {
     method: 'POST',
     credentials: 'include',
     headers: { 'X-CSRFToken': csrftoken },
-    body: formData
-  }).then(() => location.reload());
+    body: data
+  }).then(r => {
+    if (r.ok) location.reload();
+    else alert('Erreur lors de la sauvegarde de la note');
+  });
 });
 </script>
 {% endblock %}

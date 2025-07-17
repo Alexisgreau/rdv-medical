@@ -1,22 +1,49 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Accueil – RDV Medical{% endblock %}
 
 {% block content %}
-  <div class="p-5 bg-light text-center rounded">
-    <h1 class="display-5">Bienvenue sur RDV Medical</h1>
-    <p class="lead">Gérez vos rendez‑vous en quelques clics.</p>
+<section class="vh-100 d-flex align-items-center" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-5 text-center">
 
-    {% if user.is_authenticated %}
-      <p>Salut <strong>{{ user.username }}</strong> !</p>
-      {% if user.role == 'PAT' %}
-        <a class="btn btn-primary me-2" href="{% url 'dashboard_patient' %}">Mon dashboard patient</a>
-      {% elif user.role == 'DOC' %}
-        <a class="btn btn-primary me-2" href="{% url 'dashboard_medecin' %}">Mon dashboard médecin</a>
-      {% endif %}
-    {% else %}
-      <a class="btn btn-primary me-2" href="{% url 'login' %}">Se connecter</a>
-      <a class="btn btn-outline-primary me-2" href="{% url 'signup' %}">S’inscrire</a>
-    {% endif %}
+            <!-- Logo -->
+            <div class="mb-4">
+              <img src="{% static 'images/logo.svg' %}" alt="RDV Medical" width="60">
+            </div>
+
+            <!-- Titre et accroche -->
+            <h1 class="display-5 fw-semibold mb-3">Bienvenue sur RDV Medical</h1>
+            <p class="lead text-muted mb-4">Gérez vos rendez‑vous en quelques clics.</p>
+
+            {% if user.is_authenticated %}
+              <p class="mb-4">Salut <strong>{{ user.username }}</strong> !</p>
+              {% if user.role == 'PAT' %}
+                <a href="{% url 'dashboard_patient' %}" class="btn btn-primary btn-lg w-100 mb-2 rounded-pill">
+                  Accéder à mon tableau de bord
+                </a>
+              {% elif user.role == 'DOC' %}
+                <a href="{% url 'dashboard_medecin' %}" class="btn btn-primary btn-lg w-100 mb-2 rounded-pill">
+                  Accéder à mon tableau de bord
+                </a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100 mb-3 rounded-pill">
+                Se connecter
+              </a>
+              <a href="{% url 'signup' %}" class="btn btn-outline-primary btn-lg w-100 rounded-pill">
+                S’inscrire
+              </a>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
+</section>
 {% endblock %}

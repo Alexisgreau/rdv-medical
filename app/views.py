@@ -1,24 +1,19 @@
 from django.urls import reverse_lazy
 from django.views.generic.list import ListView
 from django.views import generic
-from .forms import SignupForm
+from .forms import SignupForm, MedicalNoteForm, UserProfileForm
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, UpdateView
 from django.views.generic.detail import DetailView
 from .decorators import role_required
-from .models import User
-from .models import Appointment, MedicalNote
-from .forms import MedicalNoteForm
+from .models import User, Appointment, MedicalNote, Appointment, User
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from rest_framework import viewsets, status
-from .models import Appointment, User
 from .serializers import AppointmentSerializer
 from .permissions import IsPatient, IsOwnerOrDoctor
 from django.utils import timezone
-from .forms import UserProfileForm
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import UpdateView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 import datetime
@@ -37,13 +32,34 @@ class HomePageView(TemplateView):
     template_name = "home.html"
 
 @method_decorator(role_required(User.Roles.MEDECIN), name='dispatch')
-class DoctorAppointmentListView(ListView):
+class DoctorAppointmentListView(LoginRequiredMixin, ListView):
     model = Appointment
     template_name = 'dashboard/medecin_appointments.html'
     context_object_name = 'appointments'
 
     def get_queryset(self):
-        return Appointment.objects.filter(doctor=self.request.user).order_by('scheduled_time')
+        date_str = self.request.GET.get('date')
+        try:
+            if date_str:
+                # bien qualifier datetime.strftime sur le module
+                sel_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            else:
+                sel_date = timezone.localdate()
+        except ValueError:
+            sel_date = timezone.localdate()
+
+        qs = Appointment.objects.filter(
+            doctor=self.request.user,
+            scheduled_time__date=sel_date
+        ).select_related('patient', 'note').order_by('scheduled_time')
+
+        self.selected_date = sel_date
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['selected_date'] = getattr(self, 'selected_date', timezone.localdate())
+        return ctx
 
 @method_decorator(role_required(User.Roles.MEDECIN), name='dispatch')
 class DoctorAppointmentDetailView(DetailView):
