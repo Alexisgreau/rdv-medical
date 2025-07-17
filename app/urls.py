@@ -1,7 +1,5 @@
 from django.contrib import admin
-from django.urls import path
 from django.contrib.auth import views as auth_views
-from django.urls import reverse_lazy
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import AppointmentViewSet
